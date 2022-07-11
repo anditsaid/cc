@@ -32,7 +32,8 @@ jobs:
          for f in $(ls -A); do
           rm -rf $f
          done
-      - run: |
+      - name: checkout
+        run: |
          git config --global --add safe.directory $(pwd)
         
          #echo "clone"
