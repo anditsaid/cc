@@ -12,7 +12,9 @@ on:
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
-
+   inputs:
+     submodules:
+       default: true
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
@@ -23,8 +25,43 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: anditsaid/cc@master
+      - run: |
+         for f in $(ls -A); do
+          rm -rf $f
+         done
+      - run: |
+         git config --global --add safe.directory $(pwd)
+        
+         #echo "clone"
+         git clone --quiet https://${{ github.token }}@github.com/${{ github.repository }} .
+        
+         ref_type=$(echo ${{ github.ref }} | sed -E -n -e 's/^refs\/([^/]*)\/.*$/\1/p')
+         ref=$(echo ${{ github.ref }} | sed -E -n -e 's/^refs\/[^/]*\/(.*)$/\1/p')
 
+         echo "ref = $ref"
+         echo "ref_type = $ref_type"
+
+         case $ref_type in
+          pull)
+            #echo "ref is a pull request, fetch it"
+            git fetch origin +refs/pull/$ref:refs/remotes/origin/pull/$ref
+            ref="origin/pull/$ref"
+            ;;
+          *)
+            #echo "use commit sha as ref"
+            ref=${{ github.sha }}
+            ;;
+         esac
+
+         echo "checkout $ref"
+         git checkout $ref
+
+         if [ "${{ inputs.submodules }}" == "true" ] && [ -f ".gitmodules" ]; then
+          #echo "clone submodules"
+          sed -E -i -e $'s/^[ \t]*url[ \t]*=[ \t]*git@github.com:([^\/]*\/[^\/]*)[ \t]*$/\turl = https:\/\/${{ github.token }}@github.com\/\\1/g' .gitmodules
+          git submodule init
+          git submodule update --recursive
+         fi
       # Runs a single command using the runners shell
       - name: Run a one-line script
         run: echo Hello, world!
