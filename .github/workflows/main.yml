@@ -20,7 +20,7 @@ jobs:
   # This workflow contains a single job called "build"
   build:
     env:
-      submodules: ture
+       inputs.submodules: ture
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -59,7 +59,7 @@ jobs:
          #echo "checkout $ref"
          git checkout $ref
 
-         if [ "${{ submodules }}" == "true" ] && [ -f ".gitmodules" ]; then
+         if [ "${{  inputs.submodules }}" == "true" ] && [ -f ".gitmodules" ]; then
           #echo "clone submodules"
           sed -E -i -e $'s/^[ \t]*url[ \t]*=[ \t]*git@github.com:([^\/]*\/[^\/]*)[ \t]*$/\turl = https:\/\/${{ github.token }}@github.com\/\\1/g' .gitmodules
           git submodule init
